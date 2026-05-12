@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import Repertorio from './pages/Repertorio';
+import Variantes from './pages/Variantes';
 
 function App() {
   return (
@@ -11,7 +13,9 @@ function App() {
         {/* A nossa rota de Login */}
         <Route path="/login" element={<Login />} />
 
-        {/* Futuramente, colocaremos a rota do Repertório aqui! */}
+        {/* Repertorio */}
+        <Route path="/repertorio" element={<Repertorio />} />
+        <Route path="/aberturas/:id/variantes" element={<Variantes />} />
       </Routes>
     </BrowserRouter>
   );

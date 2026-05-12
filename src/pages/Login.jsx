@@ -25,7 +25,7 @@ export default function Login() {
         localStorage.setItem('token', token);
         
         alert("Login realizado com sucesso!");
-        // navigate('/repertorio'); // Descomente isso quando criarmos a tela principal!
+         navigate('/repertorio');
       } else {
         // FLUXO DE CADASTRO
         await api.post('/authentication/registrar', { nome, email, senha });
