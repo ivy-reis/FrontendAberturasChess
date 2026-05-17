@@ -47,10 +47,7 @@ export default function Repertorio() {
     const game = new Chess();
     
     try {
-      // Lê o PGN original em inglês
       game.loadPgn(variante.lances);
-      
-      // Aplica a nova posição e inverte a câmera se for a vez das Pretas
       setPosicaoFen(game.fen());
       setOrientacao(abertura.cor === 'Pretas' ? 'black' : 'white');
       setAberturaAtiva(abertura);
@@ -61,13 +58,16 @@ export default function Repertorio() {
     }
   };
 
-  // Funções de CRUD
+  // ==========================================
+  // FUNÇÕES DE CRUD (Salvar e Editar via Formulário)
+  // ==========================================
   const salvarAbertura = async (e) => {
     e.preventDefault();
     try {
       if (modoPainel === 'editAbertura') {
         const res = await api.put(`/aberturas/${aberturaAtiva.id}`, formAbertura);
         setAberturas(aberturas.map(a => a.id === aberturaAtiva.id ? res.data : a));
+        if (aberturaAtiva.id === res.data.id) setAberturaAtiva(res.data);
       } else {
         const res = await api.post('/aberturas', formAbertura);
         setAberturas([...aberturas, res.data]);
@@ -93,6 +93,43 @@ export default function Repertorio() {
       }
     } catch (error) {
       alert('Erro ao salvar variante.');
+    }
+  };
+
+  // ==========================================
+  // FUNÇÕES DE EXCLUSÃO
+  // ==========================================
+  const excluirAbertura = async (id, nome) => {
+    if (!window.confirm(`Tem certeza que deseja excluir a abertura "${nome}" e todas as suas linhas de estudo?`)) return;
+    
+    try {
+      await api.delete(`/aberturas/${id}`);
+      setAberturas(aberturas.filter(a => a.id !== id));
+      setVariantes(variantes.filter(v => v.aberturaId !== id));
+      if (aberturaAtiva?.id === id) {
+        setAberturaAtiva(null);
+        setVarianteAtiva(null);
+        setPosicaoFen('start');
+        setModoPainel('menu');
+      }
+    } catch (error) {
+      alert('Erro ao excluir a abertura.');
+    }
+  };
+
+  const excluirVariante = async (id, nome) => {
+    if (!window.confirm(`Tem certeza que deseja apagar a linha "${nome}"?`)) return;
+    
+    try {
+      await api.delete(`/variantes/${id}`);
+      setVariantes(variantes.filter(v => v.id !== id));
+      if (varianteAtiva?.id === id) {
+        setVarianteAtiva(null);
+        setPosicaoFen('start');
+        setModoPainel('menu');
+      }
+    } catch (error) {
+      alert('Erro ao excluir a variante.');
     }
   };
 
@@ -148,28 +185,82 @@ export default function Repertorio() {
                 
                 {aberturasDaCor.map(abertura => (
                   <div key={abertura.id} className="group relative mb-1">
-                    <button 
-                      onClick={() => { setAberturaAtiva(abertura); setModoPainel('menu'); }}
-                      className={`w-full text-left px-4 py-3 rounded-xl transition-all text-base font-bold flex items-center justify-between ${aberturaAtiva?.id === abertura.id ? 'bg-purple-800 text-white shadow-md' : 'text-purple-200 hover:bg-purple-900/80 hover:text-white'}`}
-                    >
-                      <span className="truncate pr-2">{abertura.nome}</span>
-                      <span className="text-pink-400 opacity-50 group-hover:rotate-90 transition-transform">▶</span>
-                    </button>
                     
+                    {/* CONTAINER DA ABERTURA */}
+                    <div className={`flex items-center w-full rounded-xl transition-all ${aberturaAtiva?.id === abertura.id ? 'bg-purple-800 shadow-md' : 'hover:bg-purple-900/80'}`}>
+                      <button 
+                        onClick={() => { setAberturaAtiva(abertura); setModoPainel('menu'); }}
+                        className={`flex-1 text-left px-4 py-3 text-base font-bold flex items-center justify-between ${aberturaAtiva?.id === abertura.id ? 'text-white' : 'text-purple-200 group-hover:text-white'}`}
+                      >
+                        <span className="truncate pr-2">{abertura.nome}</span>
+                        <span className="text-pink-400 opacity-50 group-hover:rotate-90 transition-transform">▶</span>
+                      </button>
+                      
+                      {/* BOTÕES DE AÇÃO DA ABERTURA */}
+                      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all mr-1">
+                        <button
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setAberturaAtiva(abertura);
+                            setFormAbertura({ nome: abertura.nome, cor: abertura.cor });
+                            setModoPainel('editAbertura');
+                          }}
+                          className="p-1.5 text-purple-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg"
+                          title="Editar Abertura"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); excluirAbertura(abertura.id, abertura.nome); }}
+                          className="p-1.5 text-purple-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg"
+                          title="Excluir Abertura"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* LISTA DE VARIANTES */}
                     {variantes.filter(v => v.aberturaId === abertura.id).length > 0 && (
                       <div className="hidden group-hover:block w-full bg-purple-900/80 rounded-2xl shadow-inner border border-purple-700/50 p-2 mt-1 mb-2">
                         <div className="px-3 py-1 text-[10px] font-bold text-pink-300 uppercase tracking-wider mb-1">Linhas de Estudo</div>
                         {variantes.filter(v => v.aberturaId === abertura.id).map(v => {
                           const isMatchBusca = termoBusca && v.nome.toLowerCase().includes(termoBusca.toLowerCase());
                           return (
-                            <button 
-                              key={v.id}
-                              onClick={(e) => { e.stopPropagation(); atualizarTabuleiro(v, abertura); }}
-                              className={`w-full text-left px-3 py-2.5 rounded-xl transition-colors text-sm font-medium flex items-center gap-2 ${varianteAtiva?.id === v.id ? 'bg-pink-500 text-white font-bold shadow-md' : 'text-purple-100 hover:bg-purple-700 hover:text-white'} ${isMatchBusca ? 'ring-2 ring-pink-400' : ''}`}
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full bg-pink-400"></span>
-                              <span className="truncate">{v.nome}</span>
-                            </button>
+                            /* CONTAINER DA VARIANTE */
+                            <div key={v.id} className={`group/var flex items-center w-full rounded-xl transition-colors mb-1 ${varianteAtiva?.id === v.id ? 'bg-pink-500 shadow-md' : 'hover:bg-purple-700'} ${isMatchBusca ? 'ring-2 ring-pink-400' : ''}`}>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); atualizarTabuleiro(v, abertura); }}
+                                className={`flex-1 text-left px-3 py-2.5 text-sm font-medium flex items-center gap-2 ${varianteAtiva?.id === v.id ? 'text-white font-bold' : 'text-purple-100 group-hover/var:text-white'}`}
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-pink-400 shrink-0"></span>
+                                <span className="truncate">{v.nome}</span>
+                              </button>
+                              
+                              {/* BOTÕES DE AÇÃO DA VARIANTE */}
+                              <div className="flex items-center opacity-0 group-hover/var:opacity-100 transition-all mr-1">
+                                <button
+                                   onClick={(e) => { 
+                                     e.stopPropagation(); 
+                                     setAberturaAtiva(abertura);
+                                     setVarianteAtiva(v);
+                                     setFormVariante({ nome: v.nome, lances: v.lances });
+                                     setModoPainel('editVariante');
+                                   }}
+                                   className="p-1.5 text-pink-200 hover:text-blue-200 hover:bg-blue-500 rounded-md"
+                                   title="Editar Linha e PGN"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                   onClick={(e) => { e.stopPropagation(); excluirVariante(v.id, v.nome); }}
+                                   className="p-1.5 text-pink-200 hover:text-white hover:bg-red-500 rounded-md"
+                                   title="Excluir Linha"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
                           )
                         })}
                       </div>
@@ -207,7 +298,6 @@ export default function Repertorio() {
             </div>
           </div>
 
-          {/* Wrapper blindado para garantir largura fixa e preservar estilos */}
           <div style={{ width: '492px', height: '492px' }} className="shadow-2xl rounded-sm overflow-hidden border-[6px] border-purple-950 bg-pink-100 flex items-center justify-center">
             <Chessboard 
               id="TabuleiroPrincipal"
@@ -334,6 +424,7 @@ export default function Repertorio() {
                    <div className="text-sm font-black text-purple-900 uppercase tracking-widest">Notação em Estudo</div>
                  </div>
                  
+                 {/* BOTÃO DE EDIÇÃO COMPLETA (Lances/PGN) */}
                  <button 
                    onClick={() => {
                      setFormVariante({ nome: varianteAtiva.nome, lances: varianteAtiva.lances });
@@ -341,7 +432,7 @@ export default function Repertorio() {
                    }}
                    className="bg-pink-600 hover:bg-pink-700 text-white px-5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                  >
-                   <span>✏️</span> EDITAR VARIANTE
+                   <span>✏️</span> EDITAR PGN
                  </button>
                </div>
 
