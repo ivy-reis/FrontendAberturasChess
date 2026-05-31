@@ -24,94 +24,65 @@ Para executar este projeto localmente, você precisará instalar:
 
 ### 1. Banco de Dados e Configuração do Backend
 1. Clone este repositório:
-   ```bash
-   git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
-Abra a pasta do backend (LivroAberturasAPI).
+   `git clone https://github.com/ivy-reis/FrontendAberturasChess.git`
 
-Abra o arquivo appsettings.json (ou appsettings.Development.json) e configure a sua string de conexão com o PostgreSQL. Exemplo:
+2. Abra a pasta do backend (`LivroAberturasAPI`).
 
-JSON
+3. Abra o arquivo `appsettings.json` (ou `appsettings.Development.json`) e configure a sua string de conexão com o PostgreSQL. Exemplo:
+   `"ConnectionStrings": { "DefaultConnection": "Host=localhost;Database=aberturas_db;Username=postgres;Password=sua_senha" }`
 
+4. Restaure as dependências do .NET:
+   `dotnet restore`
 
-"ConnectionStrings": {
-  "DefaultConnection": "Host=localhost;Database=aberturas_db;Username=postgres;Password=sua_senha"
-}
-Restaure as dependências do .NET:
+5. Aplique as Migrations para criar as tabelas no banco de dados:
+   `dotnet ef database update`
 
-Bash
+6. Inicie a API:
+   `dotnet run`
+   *(A API estará rodando em http://localhost:5000 ou na porta especificada no launchSettings.json).*
 
+### 2. Configuração do Frontend (React)
+1. Abra um novo terminal e navegue até a pasta do frontend (`FrontendAberturasChess`):
+   `cd FrontendAberturasChess`
 
-dotnet restore
-Aplique as Migrations para criar as tabelas no banco de dados:
+2. Instale as dependências do projeto:
+   `npm install`
 
-Bash
+3. Inicie o servidor de desenvolvimento (Vite):
+   `npm run dev`
 
+4. Acesse o sistema no navegador: `http://localhost:5173`.
 
-dotnet ef database update
-Inicie a API:
+---
 
-Bash
+## 🗺️ Diagrama de Entidades (DER)
 
-
-dotnet run
-A API estará rodando em http://localhost:5000 (ou na porta especificada no launchSettings.json).
-
-2. Configuração do Frontend (React)
-Abra um novo terminal e navegue até a pasta do frontend (FrontendAberturasChess):
-
-Bash
-
-
-cd FrontendAberturasChess
-Instale as dependências do projeto:
-
-Bash
-
-
-npm install
-Inicie o servidor de desenvolvimento (Vite):
-
-Bash
-
-
-npm run dev
-Acesse o sistema no navegador: http://localhost:5173.
-
-🗺️ Diagrama de Entidades (DER)
 ![Diagrama Lógico de Entidades](./frontend-xadrez/docs/modelogico.png)
-Nota: O diagrama ilustra a modelagem relacional estrita do domínio.
 
-1:N (Um para Muitos): Usuario cadastra múltiplas Aberturas.
+* **1:N (Um para Muitos):** `Usuario` cadastra múltiplas `Aberturas`.
+* **1:N (Um para Muitos):** Uma `Abertura` possui muitas `Variantes` teóricas.
+* **1:N (Um para Muitos):** Uma `Variante` pode ter várias `Partidas` reais associadas.
+* **1:1 (Um para Um):** Cada `Partida` possui uma única métrica de `Precisao` técnica associada (com exclusão em cascata implementada via Fluent API).
 
-1:N (Um para Muitos): Uma Abertura possui muitas Variantes teóricas.
+---
 
-1:N (Um para Muitos): Uma Variante pode ter várias Partidas reais associadas.
+## 📡 Endpoints da API REST
 
-1:1 (Um para Um): Cada Partida possui uma única métrica de Precisao técnica associada (com exclusão em cascata implementada via Fluent API).
+A documentação completa e interativa dos endpoints está disponível via **Swagger**.
+Com a API rodando, acesse no seu navegador: `http://localhost:<porta_da_api>/swagger`
 
-📡 Endpoints da API REST
-A documentação completa e interativa dos endpoints está disponível via Swagger.
-Com a API rodando, acesse no seu navegador: http://localhost:<porta_da_api>/swagger
+**Principais Rotas:**
+* `POST /api/Authentication/login` - Autenticação e geração de token JWT.
+* `POST /api/Authentication/register` - Cadastro de novos usuários.
+* `GET /api/aberturas` - Lista todas as aberturas do usuário logado.
+* `POST /api/aberturas` - Cria uma nova abertura.
+* `GET /api/partidas/variante/{varianteId}` - Lista as partidas de uma variante específica com Eager Loading da Precisão.
+* `POST /api/partidas` - Cadastra uma nova partida vinculada a uma variante e acopla suas métricas de precisão na mesma transação.
+* `DELETE /api/aberturas/{id}` - Exclui uma abertura (valida regras de integridade antes da deleção).
 
-Principais Rotas:
+---
 
-POST /api/Authentication/login - Autenticação e geração de token JWT.
-
-POST /api/Authentication/register - Cadastro de novos usuários.
-
-GET /api/aberturas - Lista todas as aberturas do usuário logado.
-
-POST /api/aberturas - Cria uma nova abertura.
-
-GET /api/partidas/variante/{varianteId} - Lista as partidas de uma variante específica com Eager Loading da Precisão.
-
-POST /api/partidas - Cadastra uma nova partida vinculada a uma variante e acopla suas métricas de precisão na mesma transação.
-
-DELETE /api/aberturas/{id} - Exclui uma abertura (valida regras de integridade antes da deleção).
-
-🛠️ Tecnologias Utilizadas
-Backend: C# / .NET 8 / Entity Framework Core / JWT (JSON Web Tokens)
-
-Banco de Dados: PostgreSQL
-
-Frontend: React / Vite / Tailwind CSS / Axios
+## 🛠️ Tecnologias Utilizadas
+* **Backend:** C# / .NET 8 / Entity Framework Core / JWT (JSON Web Tokens)
+* **Banco de Dados:** PostgreSQL
+* **Frontend:** React / Vite / Tailwind CSS / Axios
