@@ -78,7 +78,7 @@ npm run dev
 Acesse o sistema no navegador: http://localhost:5173.
 
 🗺️ Diagrama de Entidades (DER)
-![Diagrama Lógico de Entidades](./frontend-xadrez/src/assets/modelogico.png)
+![Diagrama Lógico de Entidades](./frontend-xadrez/docs/modelogico.png)
 Nota: O diagrama ilustra a modelagem relacional estrita do domínio.
 
 1:N (Um para Muitos): Usuario cadastra múltiplas Aberturas.
