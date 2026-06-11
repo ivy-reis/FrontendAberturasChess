@@ -86,10 +86,18 @@ export default function Repertorio() {
       if (modoPainel === 'editAbertura') {
         const res = await AberturaService.update(aberturaAtiva.id, formAbertura);
         setAberturas(aberturas.map(a => a.id === aberturaAtiva.id ? res.data : a));
-        if (aberturaAtiva.id === res.data.id) setAberturaAtiva(res.data);
+        if (aberturaAtiva.id === res.data.id) {
+          setAberturaAtiva(res.data);
+          setOrientacao(res.data.cor === 'Pretas' ? 'black' : 'white');
+        }
       } else {
         const res = await AberturaService.create(formAbertura);
         setAberturas([...aberturas, res.data]);
+        
+        setAberturaAtiva(res.data);
+        setVarianteAtiva(null);
+        setPosicaoFen('start');
+        setOrientacao(res.data.cor === 'Pretas' ? 'black' : 'white');
       }
       setModoPainel('menu');
     } catch (error) { alert('Erro ao salvar abertura.'); }
@@ -136,7 +144,7 @@ export default function Repertorio() {
       setAberturas(aberturas.filter(a => a.id !== id));
       setVariantes(variantes.filter(v => v.aberturaId !== id));
       if (aberturaAtiva?.id === id) {
-        setAberturaAtiva(null); setVarianteAtiva(null); setPosicaoFen('start'); setModoPainel('menu');
+        setAberturaAtiva(null); setVarianteAtiva(null); setPosicaoFen('start'); setModoPainel('menu'); setOrientacao('white');
       }
     } catch (error) { alert(error.response?.data?.erro || 'Erro ao excluir a abertura.'); }
   };
@@ -150,14 +158,6 @@ export default function Repertorio() {
         setVarianteAtiva(null); setPosicaoFen('start'); setModoPainel('menu');
       }
     } catch (error) { alert(error.response?.data?.erro || 'Erro ao excluir a variante.'); }
-  };
-
-  const excluirPartida = async (id) => {
-    if (!window.confirm(`Excluir este registro de partida?`)) return;
-    try {
-      await PartidaService.delete(id);
-      setPartidas(partidas.filter(p => p.id !== id));
-    } catch (error) { alert('Erro ao excluir a partida.'); }
   };
 
   const handleLogout = () => {
@@ -219,8 +219,12 @@ export default function Repertorio() {
                             setAberturaAtiva(null);
                             setVarianteAtiva(null);
                             setPosicaoFen('start');
+                            setOrientacao('white'); // Volta ao normal
                           } else {
                             setAberturaAtiva(abertura); 
+                            setVarianteAtiva(null); 
+                            setPosicaoFen('start'); 
+                            setOrientacao(abertura.cor === 'Pretas' ? 'black' : 'white'); 
                           }
                           setModoPainel('menu'); 
                         }}
@@ -230,7 +234,15 @@ export default function Repertorio() {
                         <span className={`text-pink-400 opacity-50 transition-transform ${aberturaAtiva?.id === abertura.id ? 'rotate-90' : 'group-hover:rotate-90'}`}>▶</span>
                       </button>
                       <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all mr-1">
-                        <button onClick={(e) => { e.stopPropagation(); setAberturaAtiva(abertura); setFormAbertura({ nome: abertura.nome, cor: abertura.cor }); setModoPainel('editAbertura'); }} className="p-1.5 text-purple-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg">✏️</button>
+                        <button onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setAberturaAtiva(abertura);
+                          setVarianteAtiva(null); // Reseta a variante se for editar a abertura
+                          setPosicaoFen('start'); // Volta o tabuleiro para o início da edição
+                          setOrientacao(abertura.cor === 'Pretas' ? 'black' : 'white'); 
+                          setFormAbertura({ nome: abertura.nome, cor: abertura.cor }); 
+                          setModoPainel('editAbertura'); 
+                        }} className="p-1.5 text-purple-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg">✏️</button>
                         <button onClick={(e) => { e.stopPropagation(); excluirAbertura(abertura.id, abertura.nome); }} className="p-1.5 text-purple-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg">🗑️</button>
                       </div>
                     </div>
@@ -268,7 +280,15 @@ export default function Repertorio() {
               <span className="text-xs font-bold text-pink-400 uppercase tracking-wider">Premium</span>
             </div>
           </div>
-          <button onClick={handleLogout} className="p-3 bg-purple-800 hover:bg-pink-600 text-white rounded-xl transition-colors shadow-md" title="Sair">🚪</button>
+          {/* BOTÃO DE SAIR ATUALIZADO COM O RÓTULO */}
+          <button 
+            onClick={handleLogout} 
+            className="px-4 py-2 bg-purple-800 hover:bg-pink-600 text-white rounded-xl transition-colors shadow-md flex flex-col items-center justify-center gap-1" 
+            title="Sair"
+          >
+            <span className="text-xl leading-none">🚪</span>
+            <span className="text-[10px] font-black uppercase tracking-wider leading-none">Sair</span>
+          </button>
         </div>
       </aside>
 
@@ -307,6 +327,7 @@ export default function Repertorio() {
                 setAberturaAtiva(null);
                 setVarianteAtiva(null);
                 setPosicaoFen('start');
+                setOrientacao('white'); // Volta o tabuleiro
               }}
               className="bg-purple-200/50 hover:bg-purple-300 text-purple-900 px-4 py-2 rounded-xl text-sm font-black transition-colors flex items-center gap-2 shadow-sm"
               title="Voltar ao Início"
@@ -322,7 +343,14 @@ export default function Repertorio() {
               {/* Opções de Criar Abertura/Variante */}
               {!varianteAtiva && (
                 <div className="space-y-4">
-                  <button onClick={() => { setFormAbertura({nome: '', cor: 'Brancas'}); setModoPainel('formAbertura'); }} className="w-full bg-white hover:bg-pink-50 p-6 rounded-3xl flex items-center gap-5 transition-all shadow-lg border border-pink-100 hover:shadow-xl hover:-translate-y-1 group">
+                  <button onClick={() => { 
+                    setAberturaAtiva(null); // Limpa abertura anterior
+                    setVarianteAtiva(null); // Limpa variante anterior
+                    setPosicaoFen('start'); // Reseta peças
+                    setOrientacao('white'); // Força branco inicial
+                    setFormAbertura({nome: '', cor: 'Brancas'}); 
+                    setModoPainel('formAbertura'); 
+                  }} className="w-full bg-white hover:bg-pink-50 p-6 rounded-3xl flex items-center gap-5 transition-all shadow-lg border border-pink-100 hover:shadow-xl hover:-translate-y-1 group">
                     <div className="text-4xl group-hover:scale-110 transition-transform">✨</div>
                     <div className="text-left">
                       <div className="font-black text-xl text-purple-950 mb-1">Nova Abertura</div>
@@ -454,8 +482,17 @@ export default function Repertorio() {
                     </div>
                     <div>
                       <label className="block font-bold text-purple-900 mb-2 ml-1">Cor</label>
-                      <select value={formAbertura.cor} onChange={e => setFormAbertura({...formAbertura, cor: e.target.value})} className="w-full bg-pink-50 border-2 border-pink-100 text-purple-900 font-bold p-4 rounded-2xl focus:outline-none focus:border-pink-500">
-                        <option value="Brancas">Brancas</option><option value="Pretas">Pretas</option>
+                      <select 
+                        value={formAbertura.cor} 
+                        onChange={e => {
+                          setFormAbertura({...formAbertura, cor: e.target.value});
+                          // CORREÇÃO: Gira o tabuleiro IMEDIATAMENTE ao trocar a opção no select!
+                          setOrientacao(e.target.value === 'Pretas' ? 'black' : 'white');
+                        }} 
+                        className="w-full bg-pink-50 border-2 border-pink-100 text-purple-900 font-bold p-4 rounded-2xl focus:outline-none focus:border-pink-500"
+                      >
+                        <option value="Brancas">Brancas</option>
+                        <option value="Pretas">Pretas</option>
                       </select>
                     </div>
                    </>
@@ -493,15 +530,34 @@ export default function Repertorio() {
                     <div className="grid grid-cols-3 gap-3 pt-2">
                       <div>
                         <label className="block font-bold text-xs text-purple-900 mb-1">Precisão (%)</label>
-                        <input type="number" step="0.1" value={formPartida.precisaoGeral} onChange={e => setFormPartida({...formPartida, precisaoGeral: parseFloat(e.target.value)})} required className="w-full bg-pink-50 border-2 border-pink-100 text-purple-900 font-bold p-2.5 rounded-xl text-center focus:outline-none focus:border-pink-500" />
+                        <input 
+                          type="number" 
+                          step="0.1" 
+                          value={formPartida.precisaoGeral} 
+                          onChange={e => setFormPartida({...formPartida, precisaoGeral: e.target.value === '' ? '' : parseFloat(e.target.value)})} 
+                          required 
+                          className="w-full bg-pink-50 border-2 border-pink-100 text-purple-900 font-bold p-2.5 rounded-xl text-center focus:outline-none focus:border-pink-500" 
+                        />
                       </div>
                       <div>
                         <label className="block font-bold text-xs text-blue-700 mb-1">Brilhantes (!!)</label>
-                        <input type="number" value={formPartida.lancesBrilhantes} onChange={e => setFormPartida({...formPartida, lancesBrilhantes: parseInt(e.target.value)})} required className="w-full bg-pink-50 border-2 border-pink-100 text-blue-700 font-bold p-2.5 rounded-xl text-center focus:outline-none focus:border-blue-400" />
+                        <input 
+                          type="number" 
+                          value={formPartida.lancesBrilhantes} 
+                          onChange={e => setFormPartida({...formPartida, lancesBrilhantes: e.target.value === '' ? '' : parseInt(e.target.value, 10)})} 
+                          required 
+                          className="w-full bg-pink-50 border-2 border-pink-100 text-blue-700 font-bold p-2.5 rounded-xl text-center focus:outline-none focus:border-blue-400" 
+                        />
                       </div>
                       <div>
                         <label className="block font-bold text-xs text-red-700 mb-1">Capivaras (??)</label>
-                        <input type="number" value={formPartida.capivara} onChange={e => setFormPartida({...formPartida, capivara: parseInt(e.target.value)})} required className="w-full bg-pink-50 border-2 border-pink-100 text-red-700 font-bold p-2.5 rounded-xl text-center focus:outline-none focus:border-red-400" />
+                        <input 
+                          type="number" 
+                          value={formPartida.capivara} 
+                          onChange={e => setFormPartida({...formPartida, capivara: e.target.value === '' ? '' : parseInt(e.target.value, 10)})} 
+                          required 
+                          className="w-full bg-pink-50 border-2 border-pink-100 text-red-700 font-bold p-2.5 rounded-xl text-center focus:outline-none focus:border-red-400" 
+                        />
                       </div>
                     </div>
                     </>

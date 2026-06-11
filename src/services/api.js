@@ -1,17 +1,17 @@
 import axios from 'axios';
 
-// Cria uma instância do Axios apontando para a sua API em C#
+// Cria uma instância do Axios apontando para a API em C#
 const api = axios.create({
   baseURL: 'http://localhost:5260/api', 
 });
 
-// Interceptor: Antes de qualquer requisição sair do React, ele faz isso:
+//  Antes de qualquer requisição sair do React, intercepta
 api.interceptors.request.use((config) => {
   // Busca o token que vamos salvar no navegador na hora do login
   const token = localStorage.getItem('token');
   
   if (token) {
-    // Se o token existir, coloca ele no cabeçalho (A Pulseira VIP!)
+    // Se o token existir, coloca ele no cabeçalho 
     config.headers.Authorization = `Bearer ${token}`;
   }
   
